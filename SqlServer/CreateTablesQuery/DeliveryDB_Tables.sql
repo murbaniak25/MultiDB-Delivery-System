@@ -92,14 +92,12 @@ CREATE TABLE Kurierzy (
 CREATE TABLE Przesylki (
     PrzesylkaID INT IDENTITY(1,1) PRIMARY KEY,
     NadawcaID INT NOT NULL,
-    OdbiorcaID INT NOT NULL,
     DroppointID INT NOT NULL,
     SortowniaID INT NOT NULL,
     KurierID INT NOT NULL,
     AdresNadaniaID INT NOT NULL,
     SkrytkaID INT,
     FOREIGN KEY (NadawcaID) REFERENCES Klienci(KlientID),
-    FOREIGN KEY (OdbiorcaID) REFERENCES Klienci(KlientID),
     FOREIGN KEY (DroppointID) REFERENCES Droppointy(DroppointID),
     FOREIGN KEY (SortowniaID) REFERENCES Sortownie(SortowniaID),
     FOREIGN KEY (KurierID) REFERENCES Kurierzy(KurierID),
@@ -167,6 +165,15 @@ CREATE TABLE AwarieInfrastruktury (
     FOREIGN KEY (ObiektID) REFERENCES ObiektInfrastruktury(ObiektID),
     FOREIGN KEY (PracownikID) REFERENCES PracownicySortowni(PracownikID)
 );
+CREATE TABLE OdbiorcyPrzesy³ki(
+	PrzesylkaID INT NOT NULL,
+	OdbiorcaID INT NOT NULL,
+	CzyGlowny BIT Default 0,
+	Kolejnosc INT DEFAULT 1,
+	PRIMARY KEY (PrzesylkaID, OdbiorcaID),
+	FOREIGN KEY (PrzesylkaID) REFERENCES Przesylki(PrzesylkaID),
+	FOREIGN KEY (OdbiorcaID) REFERENCES Klienci(KlientID)
+);
 
 ALTER TABLE ObiektInfrastruktury 
 ADD FOREIGN KEY (AdresID) REFERENCES Adresy(AdresID);
@@ -178,7 +185,6 @@ ALTER TABLE Kurierzy
 ADD FOREIGN KEY (PrzesylkaID) REFERENCES Przesylki(PrzesylkaID);
 
 CREATE INDEX IX_Przesylki_NadawcaID ON Przesylki(NadawcaID);
-CREATE INDEX IX_Przesylki_OdbiorcaID ON Przesylki(OdbiorcaID);
 CREATE INDEX IX_Przesylki_SortowniaID ON Przesylki(SortowniaID);
 CREATE INDEX IX_AwarieInfrastruktury_ObiektID ON AwarieInfrastruktury(ObiektID);
 CREATE INDEX IX_AwarieInfrastruktury_Status ON AwarieInfrastruktury(Status);
