@@ -236,21 +236,13 @@ WHERE SortowniaID = 1;
 ## 📝 Dokumentacja API
 Pełna dokumentacja procedur składowanych i widoków dostępna w katalogu `/docs`
 
-## 🚧 Rozwój systemu
-
-### Planowane funkcjonalności
-- [ ] Integracja z aplikacją mobilną
-- [ ] System predykcji obciążenia paczkomatów
-- [ ] Automatyczna optymalizacja tras kurierów
-- [ ] Rozszerzenie o obsługę przesyłek międzynarodowych
-- [ ] Dashboard real-time w Power BI
 
 ## 📄 Licencja
 System wewnętrzny - wszystkie prawa zastrzeżone
 
 ## 👥 Zespół
-- Architekt systemu: [Twoje imię]
-- Developer SQL: [Twoje imię]
+- Architekt systemu: Michał Urbaniak
+- Developer SQL: Jędrzej Małaczyński
 - Projekt realizowany w ramach kursu Rozproszone Bazy Danych
 
 ---
