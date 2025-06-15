@@ -229,3 +229,56 @@ BEGIN
     
     SET @paczkomatID = @paczkomatID + 1;
 END;
+
+
+
+-- Dodatkowe dane do tabeli tras (mockup z Excela)
+INSERT INTO CzasyPrzejazdow (Trasa, DystansKM, CzasPrzejazdu, KosztPaliwa)
+VALUES 
+('WAW-KRK', 295, '4h 30min', 150.00),
+('WAW-WRO', 350, '5h 15min', 175.00),
+('WAW-GDA', 340, '5h 00min', 170.00),
+('WAW-LOD', 135, '2h 00min', 70.00),
+('KRK-WRO', 270, '4h 00min', 135.00),
+('KRK-GDA', 590, '8h 30min', 295.00),
+('KRK-LOD', 220, '3h 30min', 110.00),
+('WRO-GDA', 460, '6h 45min', 230.00),
+('WRO-LOD', 215, '3h 15min', 108.00),
+('GDA-LOD', 330, '5h 00min', 165.00);
+
+-- Kursy sortowni (mockup z Excela)
+INSERT INTO KursySortownie (KursID, Trasa, GodzinaWyjazdu, DniTygodnia, MaxPojemnosc)
+VALUES
+(1, 'WAW-KRK', '06:00', 'Pon-Pt', 1000),
+(2, 'WAW-KRK', '14:00', 'Pon-Pt', 1000),
+(3, 'WAW-KRK', '22:00', 'Pon-Pt', 1000),
+(4, 'WAW-KRK', '10:00', 'Sob-Nie', 500),
+(5, 'WAW-WRO', '07:00', 'Pon-Pt', 800),
+(6, 'WAW-WRO', '15:00', 'Pon-Pt', 800),
+(7, 'WAW-GDA', '06:30', 'Pon-Pt', 900),
+(8, 'WAW-GDA', '14:30', 'Pon-Pt', 900),
+(9, 'WAW-LOD', '08:00', 'Pon-Sob', 1200),
+(10, 'WAW-LOD', '16:00', 'Pon-Sob', 1200);
+
+-- Szablony notyfikacji
+INSERT INTO SzablonyNotyfikacji (TypZdarzenia, TematEmaila, TrescHTML, TrescTekst)
+VALUES
+('NADANIE', 'Twoja przesyłka #{ID} została nadana', 
+ '<h2>Przesyłka nadana!</h2><p>Twoja przesyłka o numerze <strong>#{ID}</strong> została przekazana kurierowi.</p><p>Przewidywany czas dostawy: <strong>{CZAS_DOSTAWY}</strong></p>',
+ 'Twoja przesyłka #{ID} została nadana. Przewidywany czas dostawy: {CZAS_DOSTAWY}'),
+ 
+('W_SORTOWNI', 'Przesyłka #{ID} w sortowni {SORTOWNIA}',
+ '<h2>Przesyłka w sortowni</h2><p>Twoja przesyłka dotarła do sortowni <strong>{SORTOWNIA}</strong>.</p>',
+ 'Twoja przesyłka dotarła do sortowni {SORTOWNIA}'),
+ 
+('W_DOSTAWIE', 'Przesyłka #{ID} jest w drodze do Ciebie',
+ '<h2>Przesyłka w dostawie!</h2><p>Kurier dostarczy Twoją przesyłkę dzisiaj.</p>',
+ 'Kurier dostarczy Twoją przesyłkę dzisiaj'),
+ 
+('W_PACZKOMACIE', 'Odbierz przesyłkę #{ID} z paczkomatu',
+ '<h2>Przesyłka czeka na odbiór!</h2><p>Twoja przesyłka znajduje się w paczkomacie <strong>{PACZKOMAT}</strong>.</p><p>Kod odbioru: <strong>{KOD}</strong></p>',
+ 'Przesyłka czeka w paczkomacie {PACZKOMAT}. Kod odbioru: {KOD}'),
+ 
+('AWARIA', 'Opóźnienie w dostawie przesyłki #{ID}',
+ '<h2>Informacja o opóźnieniu</h2><p>Z powodu awarii technicznej Twoja przesyłka może być dostarczona z opóźnieniem.</p>',
+ 'Z powodu awarii technicznej Twoja przesyłka może być dostarczona z opóźnieniem');

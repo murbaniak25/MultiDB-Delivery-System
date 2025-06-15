@@ -59,7 +59,7 @@ CREATE TABLE Droppointy (
 CREATE TABLE SkrytkiPaczkomatow (
     SkrytkaID INT PRIMARY KEY,
     DroppointID INT NOT NULL,
-    Gabaryt CHAR(1) NOT NULL, --Rodzaj gabarytu (A/B/C) do u¿ycia w procedurach w po³¹czeniu z tabelami s³ownikowymi
+    Gabaryt CHAR(1) NOT NULL, --Rodzaj gabarytu (A/B/C) do uï¿½ycia w procedurach w poï¿½ï¿½czeniu z tabelami sï¿½ownikowymi
     Status VARCHAR(20) DEFAULT 'Wolna',
     FOREIGN KEY (SkrytkaID) REFERENCES ObiektInfrastruktury(ObiektID),
     FOREIGN KEY (DroppointID) REFERENCES Droppointy(DroppointID)
@@ -90,15 +90,17 @@ CREATE TABLE Kurierzy (
     FOREIGN KEY (SortowniaID) REFERENCES Sortownie(SortowniaID)
 );
 
+
+
 CREATE TABLE Przesylki (
     PrzesylkaID INT IDENTITY(1,1) PRIMARY KEY,
     NadawcaID INT NOT NULL,
-    DroppointID INT NOT NULL,
+    DroppointID INT,
     SortowniaID INT NOT NULL,
     KurierID INT NOT NULL,
     AdresNadaniaID INT NOT NULL,
     SkrytkaID INT,
-	Gabaryt CHAR(1) NOT NULL, --Rodzaj gabarytu (A/B/C) do u¿ycia w procedurach w po³¹czeniu z tabelami s³ownikowymi
+	Gabaryt CHAR(1) NOT NULL, --Rodzaj gabarytu (A/B/C) do uï¿½ycia w procedurach w poï¿½ï¿½czeniu z tabelami sï¿½ownikowymi
     FOREIGN KEY (NadawcaID) REFERENCES Klienci(KlientID),
     FOREIGN KEY (DroppointID) REFERENCES Droppointy(DroppointID),
     FOREIGN KEY (SortowniaID) REFERENCES Sortownie(SortowniaID),
@@ -113,7 +115,7 @@ CREATE TABLE Zwroty (
     PrzesylkaID INT NOT NULL,
     Data DATE NOT NULL,
     Przyczyna VARCHAR(200) NOT NULL,
-    Status VARCHAR(20) CHECK (Status IN ('Nowy', 'W trakcie', 'Zakoñczony', 'Anulowany')),
+    Status VARCHAR(20) CHECK (Status IN ('Nowy', 'W trakcie', 'Zakoï¿½czony', 'Anulowany')),
     FOREIGN KEY (KlientID) REFERENCES Klienci(KlientID),
     FOREIGN KEY (PrzesylkaID) REFERENCES Przesylki(PrzesylkaID)
 );
@@ -184,7 +186,7 @@ CREATE TABLE WojewodztwaSortowni (
     FOREIGN KEY (SortowniaID) REFERENCES Sortownie(SortowniaID)
 );
 
---To tabela, która pozwala na po³¹czenie ca³ej logiki trasy przesy³ki
+--To tabela, ktï¿½ra pozwala na poï¿½ï¿½czenie caï¿½ej logiki trasy przesyï¿½ki
 CREATE TABLE TrasaPrzesylki (
     PrzesylkaID INT PRIMARY KEY,
     SortowniaStartowaID INT NOT NULL,
@@ -254,9 +256,9 @@ CREATE INDEX IX_WojewodztwaSortowni_Wojewodztwo ON WojewodztwaSortowni(Wojewodzt
 CREATE INDEX IX_TrasaPrzesylki_SortowniaStartowaID ON TrasaPrzesylki(SortowniaStartowaID);
 CREATE INDEX IX_TrasaPrzesylki_SortowniaDocelowaID ON TrasaPrzesylki(SortowniaDocelowaID);
 
---tabele s³ownikowe
+--tabele sï¿½ownikowe
 
---CENY US£UG
+--CENY USï¿½UG
 CREATE TABLE CennikPodstawowy (
     ID_Cennika INT PRIMARY KEY,
     TypUslugi VARCHAR(50),
@@ -279,7 +281,7 @@ CREATE TABLE Dodatki (
     Opis VARCHAR(255)
 );
 
---LIMITY ROZMIARÓW
+--LIMITY ROZMIARï¿½W
 
 CREATE TABLE Gabaryty (
     Gabaryt CHAR(1) PRIMARY KEY,
@@ -310,7 +312,7 @@ CREATE TABLE ParametryPowiadomien (
     Szablon VARCHAR(500)
 );
 
---KODY B£ÊDÓW
+--KODY Bï¿½ï¿½Dï¿½W
 CREATE TABLE KodyBledow (
     KodBledu VARCHAR(10) PRIMARY KEY,
     Kategoria VARCHAR(50),
@@ -333,4 +335,40 @@ CREATE TABLE CzasyPrzejazdow (
     DystansKM INT,
     CzasPrzejazdu VARCHAR(20),
     KosztPaliwa DECIMAL(10,2)
+);
+
+CREATE TABLE SzablonyNotyfikacji (
+    SzablonID INT IDENTITY(1,1) PRIMARY KEY,
+    TypZdarzenia VARCHAR(50) NOT NULL,
+    TematEmaila VARCHAR(200),
+    TrescHTML VARCHAR(MAX),
+    TrescTekst VARCHAR(1000),
+    CzyAktywny BIT DEFAULT 1,
+    DataUtworzenia DATETIME2 DEFAULT GETDATE()
+);
+
+-- Tabela kolejki notyfikacji (dla symulacji wysyÅ‚ki)
+CREATE TABLE KolejkaNotyfikacji (
+    KolejkaID INT IDENTITY(1,1) PRIMARY KEY,
+    AdresEmail VARCHAR(100),
+    Temat VARCHAR(200),
+    TrescHTML VARCHAR(MAX),
+    TrescTekst VARCHAR(1000),
+    TypZdarzenia VARCHAR(50),
+    StatusWysylki VARCHAR(20) DEFAULT 'OCZEKUJE',
+    DataUtworzenia DATETIME2 DEFAULT GETDATE(),
+    DataWyslania DATETIME2,
+    ProbaWysylki INT DEFAULT 0,
+    Bledy VARCHAR(500)
+);
+
+-- Tabela historii statusÃ³w przesyÅ‚ek
+CREATE TABLE HistoriaStatusowPrzesylek (
+    HistoriaID INT IDENTITY(1,1) PRIMARY KEY,
+    PrzesylkaID INT NOT NULL,
+    Status VARCHAR(50) NOT NULL,
+    Opis VARCHAR(500),
+    LokalizacjaID INT,
+    DataZmiany DATETIME2 DEFAULT GETDATE(),
+    FOREIGN KEY (PrzesylkaID) REFERENCES Przesylki(PrzesylkaID)
 );
