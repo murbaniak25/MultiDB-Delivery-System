@@ -1,15 +1,8 @@
-USE DeliveryDB;
+USE DeliveryDB
 GO
 
-EXEC sp_addlinkedserver 
-    @server = 'Excel_CenyUslug', 
-    @srvproduct = 'Excel', 
-    @provider = 'Microsoft.ACE.OLEDB.12.0', 
-    @datasrc = 'C:\ExcelData\Ceny_uslug.xlsx', 
-    @provstr = 'Excel 12.0;IMEX=1;HDR=YES;';
-
 INSERT INTO dbo.CennikPodstawowy (ID_Cennika, TypUslugi, Gabaryt, Strefa, CenaNetto, StawkaVAT, CenaBrutto, DataOd, DataDo, Aktywny)
-SELECT 
+SELECT
     [ID_Cennika],
     [Typ_Uslugi],
     [Gabaryt],
@@ -20,123 +13,107 @@ SELECT
     CAST([Data_Od] AS DATE),
     CAST([Data_Do] AS DATE),
     CASE WHEN [Aktykny] = 'TAK' THEN 1 ELSE 0 END
-FROM OPENQUERY(Excel_CenyUslug, 'SELECT * FROM [Cennik_Podst$]');
-
-EXEC sp_dropserver 'Excel_CenyUslug', 'droplogins';
-
------
-
-EXEC sp_addlinkedserver 
-    @server = 'Excel_Dodatki', 
-    @srvproduct = 'Excel', 
-    @provider = 'Microsoft.ACE.OLEDB.12.0', 
-    @datasrc = 'C:\ExcelData\Ceny_uslug.xlsx', 
-    @provstr = 'Excel 12.0;IMEX=1;HDR=YES;';
+FROM OPENROWSET(
+    'Microsoft.ACE.OLEDB.12.0',
+    'Excel 12.0;Database=C:\ExcelData\Ceny_uslug.xlsx;HDR=YES;IMEX=1',
+    'SELECT * FROM [Cennik_Podst$]'
+);
 
 INSERT INTO dbo.Dodatki (IdDodatku, Nazwa, CenaNetto, VAT, CenaBrutto, Opis)
-SELECT 
+SELECT
     [Id_Dodatku],
     [Nazwa],
     [Cena_Netto],
     [VAT],
     [Cena_Brutto],
     [Opis]
-FROM OPENQUERY(Excel_Dodatki, 'SELECT * FROM [Dodatki$]');
-
-EXEC sp_dropserver 'Excel_Dodatki', 'droplogins';
-
-
------EXEC sp_addlinkedserver 
-    @server = 'Excel_KodyBledow', 
-    @srvproduct = 'Excel', 
-    @provider = 'Microsoft.ACE.OLEDB.12.0', 
-    @datasrc = 'C:\ExcelData\Kody_Bledow.xlsx', 
-    @provstr = 'Excel 12.0;IMEX=1;HDR=YES;';
+FROM OPENROWSET(
+    'Microsoft.ACE.OLEDB.12.0',
+    'Excel 12.0;Database=C:\ExcelData\Ceny_uslug.xlsx;HDR=YES;IMEX=1',
+    'SELECT * FROM [Dodatki$]'
+);
 
 INSERT INTO dbo.KodyBledow (KodBledu, Kategoria, OpisBledu, PoziomWaznosci)
-SELECT 
+SELECT
     [Kod_Bledu],
     [Kategoria],
     [Opis_Bledu],
     [Poziom_Waznosci]
-FROM OPENQUERY(Excel_KodyBledow, 'SELECT * FROM [S³ownik_Bledow$]');
-
-EXEC sp_dropserver 'Excel_KodyBledow', 'droplogins';
-
-----
-
-EXEC sp_addlinkedserver 
-    @server = 'Excel_KursySortownie', 
-    @srvproduct = 'Excel', 
-    @provider = 'Microsoft.ACE.OLEDB.12.0', 
-    @datasrc = 'C:\ExcelData\Kursy_Sortownie.xlsx', 
-    @provstr = 'Excel 12.0;IMEX=1;HDR=YES;';
+FROM OPENROWSET(
+    'Microsoft.ACE.OLEDB.12.0',
+    'Excel 12.0;Database=C:\ExcelData\Kody_Bledow.xlsx;HDR=YES;IMEX=1',
+    'SELECT * FROM [S³ownik_Bledow$]'
+);
 
 INSERT INTO dbo.KursySortownie (KursID, Trasa, GodzinaWyjazdu, DniTygodnia, MaxPojemnosc)
-SELECT 
+SELECT
     [ID_Kursu ],
     [Trasa],
     CAST([Godzina_Wyjazdu] AS TIME),
     [Dni_Tygodnia],
     [Limit_Paczek]
-FROM OPENQUERY(Excel_KursySortownie, 'SELECT * FROM [Krusy_TIR$]');
-
-EXEC sp_dropserver 'Excel_KursySortownie', 'droplogins';
-
-
-----
-EXEC sp_addlinkedserver 
-    @server = 'Excel_LimityRozmiarow', 
-    @srvproduct = 'Excel', 
-    @provider = 'Microsoft.ACE.OLEDB.12.0', 
-    @datasrc = 'C:\ExcelData\Limity_Rozmiarow.xlsx', 
-    @provstr = 'Excel 12.0;IMEX=1;HDR=YES;';
+FROM OPENROWSET(
+    'Microsoft.ACE.OLEDB.12.0',
+    'Excel 12.0;Database=C:\ExcelData\Kursy_Sortownie.xlsx;HDR=YES;IMEX=1',
+    'SELECT * FROM [Krusy_TIR$]'
+);
 
 INSERT INTO dbo.Gabaryty (Gabaryt, MaxDlugoscCM, MaxSzerokoscCM, MaxWysokoscCM, MaxObwodCM, MaxWagaKG)
-SELECT 
+SELECT
     [Gabaryt],
     [Max_Dlugosc_CM],
     [Max_Szerokosc_CM],
     [Max_Wysokosc_CM],
     [Max_Obwod_CM],
     [Max_Waga_KG]
-FROM OPENQUERY(Excel_LimityRozmiarow, 'SELECT * FROM [Gabaryty$]');
-
-EXEC sp_dropserver 'Excel_LimityRozmiarow', 'droplogins';
-
-----
-
-EXEC sp_addlinkedserver 
-    @server = 'Excel_ParametrySystemu', 
-    @srvproduct = 'Excel', 
-    @provider = 'Microsoft.ACE.OLEDB.12.0', 
-    @datasrc = 'C:\ExcelData\Parametry_Systemu.xlsx', 
-    @provstr = 'Excel 12.0;IMEX=1;HDR=YES;';
+FROM OPENROWSET(
+    'Microsoft.ACE.OLEDB.12.0',
+    'Excel 12.0;Database=C:\ExcelData\Limity_Rozmiarow.xlsx;HDR=YES;IMEX=1',
+    'SELECT * FROM [Gabaryty$]'
+);
 
 INSERT INTO dbo.ParametryOgolne (Parametr, Wartosc, Jednostka)
-SELECT 
+SELECT
     [Parametr],
     [Wartosc],
     [jednostka]
-FROM OPENQUERY(Excel_ParametrySystemu, 'SELECT * FROM [Parametry_Ogolne$]');
-
-EXEC sp_dropserver 'Excel_ParametrySystemu', 'droplogins';
-
-----
-
-EXEC sp_addlinkedserver 
-    @server = 'Excel_ParametryPowiadomien', 
-    @srvproduct = 'Excel', 
-    @provider = 'Microsoft.ACE.OLEDB.12.0', 
-    @datasrc = 'C:\ExcelData\Parametry_Systemu.xlsx', 
-    @provstr = 'Excel 12.0;IMEX=1;HDR=YES;';
+FROM OPENROWSET(
+    'Microsoft.ACE.OLEDB.12.0',
+    'Excel 12.0;Database=C:\ExcelData\Parametry_Systemu.xlsx;HDR=YES;IMEX=1',
+    'SELECT * FROM [Parametry_Ogolne$]'
+);
 
 INSERT INTO dbo.ParametryPowiadomien (Typ, Czas, Jednostka, Szablon)
-SELECT 
+SELECT
     [Typ],
     [Czas],
     [Jednostka],
     [Szablon]
-FROM OPENQUERY(Excel_ParametryPowiadomien, 'SELECT * FROM [Parametry_Powiadomien$]');
+FROM OPENROWSET(
+    'Microsoft.ACE.OLEDB.12.0',
+    'Excel 12.0;Database=C:\ExcelData\Parametry_Systemu.xlsx;HDR=YES;IMEX=1',
+    'SELECT * FROM [Parametry_Powiadomien$]'
+);
 
-EXEC sp_dropserver 'Excel_ParametryPowiadomien', 'droplogins';
+INSERT INTO dbo.CzasyPrzejazdow (Trasa, DystansKM, CzasPrzejazdu, KosztPaliwa)
+SELECT
+    [Trasa],
+    CAST(REPLACE([Dystans], ' km', '') AS INT),
+    [Czas],
+    CAST(REPLACE([Koszt_Paliwa], ' zl', '') AS DECIMAL(10,2))
+FROM OPENROWSET(
+    'Microsoft.ACE.OLEDB.12.0',
+    'Excel 12.0;Database=C:\ExcelData\Kursy_Sortownie.xlsx;HDR=YES;IMEX=1',
+    'SELECT * FROM [Czas_Przejazdu$]'
+);
+
+INSERT INTO dbo.DopasowanieSkrytek (Gabaryt, PasujaceSkrytki, Alternatywa)
+SELECT
+    [Gabaryt],
+    [Pasujace_Skrytki],
+    [Alternatywa]
+FROM OPENROWSET(
+    'Microsoft.ACE.OLEDB.12.0',
+    'Excel 12.0;Database=C:\ExcelData\Limity_Rozmiarow.xlsx;HDR=YES;IMEX=1',
+    'SELECT * FROM [Dopasowanie$]'
+);
