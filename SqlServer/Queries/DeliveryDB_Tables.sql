@@ -374,3 +374,14 @@ CREATE TABLE HistoriaStatusowPrzesylek (
 );
 
 ALTER TABLE Przesylki ALTER COLUMN DroppointID INT NULL;
+
+CREATE TABLE KodyOdbioru (
+    KodID INT IDENTITY(1,1) PRIMARY KEY,
+    PrzesylkaID INT NOT NULL,
+    KodOdbioru VARCHAR(6) NOT NULL,
+    DataUtworzenia DATETIME2 DEFAULT GETDATE(),
+    DataWygasniecia DATETIME2,
+    CzyUzyty BIT DEFAULT 0,
+    DataUzycia DATETIME2,
+    FOREIGN KEY (PrzesylkaID) REFERENCES Przesylki(PrzesylkaID)
+);
