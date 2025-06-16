@@ -1,60 +1,6 @@
 USE DeliveryDB;
 GO
 
-
-INSERT INTO Gabaryty (Gabaryt, MaxDlugoscCM, MaxSzerokoscCM, MaxWysokoscCM, MaxObwodCM, MaxWagaKG)
-VALUES 
-('A', 64, 38, 8, 110, 5.0),
-('B', 64, 38, 19, 132, 10.0),
-('C', 64, 38, 39, 180, 25.0);
-
--- Dopasowanie skrytek
-INSERT INTO DopasowanieSkrytek (Gabaryt, PasujaceSkrytki, Alternatywa)
-VALUES 
-('A', 'A,B,C', 'Zawsze pasuje'),
-('B', 'B,C', 'Możliwość użycia C gdy brak B'),
-('C', 'C', 'Tylko skrytka C');
-
--- Cennik podstawowy
-INSERT INTO CennikPodstawowy (ID_Cennika, TypUslugi, Gabaryt, Strefa, CenaNetto, StawkaVAT, CenaBrutto, DataOd, DataDo, Aktywny)
-VALUES 
-(1, 'Standard', 'A', 'Krajowa', 12.20, 23.00, 15.00, '2024-01-01', '2024-12-31', 1),
-(2, 'Standard', 'B', 'Krajowa', 14.63, 23.00, 18.00, '2024-01-01', '2024-12-31', 1),
-(3, 'Standard', 'C', 'Krajowa', 19.51, 23.00, 24.00, '2024-01-01', '2024-12-31', 1),
-(4, 'Express', 'A', 'Krajowa', 20.33, 23.00, 25.00, '2024-01-01', '2024-12-31', 1),
-(5, 'Express', 'B', 'Krajowa', 24.39, 23.00, 30.00, '2024-01-01', '2024-12-31', 1),
-(6, 'Express', 'C', 'Krajowa', 32.52, 23.00, 40.00, '2024-01-01', '2024-12-31', 1);
-
--- Kody błędów
-INSERT INTO KodyBledow (KodBledu, Kategoria, OpisBledu, PoziomWaznosci)
-VALUES 
-('ERR001', 'Skrytka', 'Skrytka nie otwiera się', 'WYSOKI'),
-('ERR002', 'Skrytka', 'Uszkodzony zamek elektroniczny', 'KRYTYCZNY'),
-('ERR003', 'System', 'Brak połączenia z serwerem', 'WYSOKI'),
-('ERR004', 'Dostawa', 'Błędny adres dostawy', 'SREDNI'),
-('ERR005', 'Płatność', 'Błąd przetwarzania płatności', 'WYSOKI'),
-('ERR006', 'Skanowanie', 'Nieczytelny kod kreskowy', 'NISKI'),
-('ERR007', 'Sortownia', 'Awaria taśmociągu', 'KRYTYCZNY'),
-('ERR008', 'Pojazd', 'Awaria pojazdu kurierskiego', 'WYSOKI');
-
--- Parametry systemu
-INSERT INTO ParametryOgolne (Parametr, Wartosc, Jednostka)
-VALUES 
-('MaxCzasWSkrytce', 48, 'godziny'),
-('MaxProbyOdbioru', 3, 'próby'),
-('CzasNaPowrotDoNadawcy', 14, 'dni'),
-('MaxWagaPrzesylki', 30, 'kg'),
-('MinTemperaturaSkrytki', -20, '°C'),
-('MaxTemperaturaSkrytki', 60, '°C');
-
--- Parametry powiadomień
-INSERT INTO ParametryPowiadomien (Typ, Czas, Jednostka, Szablon)
-VALUES 
-('PierwszePowiadomienie', 1, 'minuta', 'Twoja przesyłka {ID} została umieszczona w paczkomacie'),
-('Przypomnienie1', 24, 'godziny', 'Przypominamy o odbiorze przesyłki {ID}'),
-('Przypomnienie2', 47, 'godziny', 'Ostatnie przypomnienie! Odbierz przesyłkę {ID} w ciągu godziny'),
-('ZwrotDoNadawcy', 48, 'godziny', 'Przesyłka {ID} została zwrócona do nadawcy');
-
 -- =============================================
 -- DANE TESTOWE - PODSTAWOWE
 -- =============================================
@@ -229,36 +175,6 @@ BEGIN
     
     SET @paczkomatID = @paczkomatID + 1;
 END;
-
-
-
--- Dodatkowe dane do tabeli tras (mockup z Excela)
-INSERT INTO CzasyPrzejazdow (Trasa, DystansKM, CzasPrzejazdu, KosztPaliwa)
-VALUES 
-('WAW-KRK', 295, '4h 30min', 150.00),
-('WAW-WRO', 350, '5h 15min', 175.00),
-('WAW-GDA', 340, '5h 00min', 170.00),
-('WAW-LOD', 135, '2h 00min', 70.00),
-('KRK-WRO', 270, '4h 00min', 135.00),
-('KRK-GDA', 590, '8h 30min', 295.00),
-('KRK-LOD', 220, '3h 30min', 110.00),
-('WRO-GDA', 460, '6h 45min', 230.00),
-('WRO-LOD', 215, '3h 15min', 108.00),
-('GDA-LOD', 330, '5h 00min', 165.00);
-
--- Kursy sortowni (mockup z Excela)
-INSERT INTO KursySortownie (KursID, Trasa, GodzinaWyjazdu, DniTygodnia, MaxPojemnosc)
-VALUES
-(1, 'WAW-KRK', '06:00', 'Pon-Pt', 1000),
-(2, 'WAW-KRK', '14:00', 'Pon-Pt', 1000),
-(3, 'WAW-KRK', '22:00', 'Pon-Pt', 1000),
-(4, 'WAW-KRK', '10:00', 'Sob-Nie', 500),
-(5, 'WAW-WRO', '07:00', 'Pon-Pt', 800),
-(6, 'WAW-WRO', '15:00', 'Pon-Pt', 800),
-(7, 'WAW-GDA', '06:30', 'Pon-Pt', 900),
-(8, 'WAW-GDA', '14:30', 'Pon-Pt', 900),
-(9, 'WAW-LOD', '08:00', 'Pon-Sob', 1200),
-(10, 'WAW-LOD', '16:00', 'Pon-Sob', 1200);
 
 -- Szablony notyfikacji
 INSERT INTO SzablonyNotyfikacji (TypZdarzenia, TematEmaila, TrescHTML, TrescTekst)

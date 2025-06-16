@@ -64,7 +64,6 @@ BEGIN
 
         COMMIT TRANSACTION;
 
-        PRINT 'Odbiór przesyłki zakończony pomyślnie.';
     END TRY
     BEGIN CATCH
         IF @@TRANCOUNT > 0 ROLLBACK TRANSACTION;

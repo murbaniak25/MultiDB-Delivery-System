@@ -47,7 +47,7 @@ EXEC sp_NadajPrzesylkeV2
     @DostawaDoDomu = 0;
 
 
-EXEC sp_SymulujCyklZyciaPrzesylkiV2 @PrzesylkaId = 44;
+EXEC sp_SymulujCyklZyciaPrzesylkiV2 @PrzesylkaId = 1;
 
 select * from Przesylki
 select * from vw_SzczegolyPrzesylki where PrzesylkaID = 44;

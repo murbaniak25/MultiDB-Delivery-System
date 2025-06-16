@@ -103,17 +103,15 @@ BEGIN
 
 
 
-        -- Dodaj nową trasę zwrotną
         INSERT INTO TrasaPrzesylki (PrzesylkaID, SortowniaStartowaID, SortowniaDocelowaID, DataWyjazdu, DataPrzyjazdu)
         VALUES (
             @PrzesylkaID, 
             @SortowniaOdbiorcyID, 
             @SortowniaNadawcyID, 
             GETDATE(), 
-            DATEADD(HOUR, 24, GETDATE()) -- przykładowo 24h na zwrot
+            DATEADD(HOUR, 24, GETDATE())
         );
 
-        -- 8. Powiadom nadawcę i odbiorcę
         EXEC sp_WyslijNotyfikacjeEmail @PrzesylkaID, 'ZWROT';
 
         COMMIT TRANSACTION;
