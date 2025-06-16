@@ -6,10 +6,10 @@ CREATE OR ALTER PROCEDURE sp_SymulujCyklZyciaPrzesylkiV2
 AS
 BEGIN
     SET NOCOUNT ON;
-    
+
     DECLARE @DroppointID INT, @SortowniaStartowaID INT, @SortowniaDocelowaID INT;
     DECLARE @CzyDostawaDoDomu BIT = 0;
-    
+
     SELECT 
         @DroppointID = p.DroppointID,
         @SortowniaStartowaID = tp.SortowniaStartowaID,
@@ -18,7 +18,7 @@ BEGIN
     FROM Przesylki p
     LEFT JOIN TrasaPrzesylki tp ON p.PrzesylkaID = tp.PrzesylkaID
     WHERE p.PrzesylkaID = @PrzesylkaID;
-    
+
     -- 1. Odbiór od nadawcy
     WAITFOR DELAY '00:00:01';
     EXEC sp_AktualizujStatusPrzesylki 
@@ -27,7 +27,7 @@ BEGIN
         @Opis = 'Kurier odebrał przesyłkę od nadawcy',
         @LokalizacjaID = NULL;
     PRINT 'Status: Odebrana od nadawcy';
-    
+
     -- 2. Dostawa do sortowni
     WAITFOR DELAY '00:00:01';
     EXEC sp_AktualizujStatusPrzesylki 
@@ -36,7 +36,7 @@ BEGIN
         @Opis = 'Przesyłka dotarła do sortowni nadania',
         @LokalizacjaID = @SortowniaStartowaID;
     PRINT 'Status: W sortowni nadania';
-    
+
     -- 3. W transporcie (jeśli różne sortownie)
     IF @SortowniaStartowaID != @SortowniaDocelowaID
     BEGIN
@@ -47,7 +47,7 @@ BEGIN
             @Opis = 'Przesyłka w transporcie między sortowniami',
             @LokalizacjaID = NULL;
         PRINT 'Status: W transporcie między sortowniami';
-        
+
         -- 4. W sortowni docelowej
         WAITFOR DELAY '00:00:01';
         EXEC sp_AktualizujStatusPrzesylki 
@@ -57,7 +57,7 @@ BEGIN
             @LokalizacjaID = @SortowniaDocelowaID;
         PRINT 'Status: W sortowni docelowej';
     END
-    
+
     -- 5. W dostawie
     WAITFOR DELAY '00:00:01';
     EXEC sp_AktualizujStatusPrzesylki 
@@ -66,7 +66,7 @@ BEGIN
         @Opis = 'Przesyłka wydana kurierowi do dostawy ostatniej mili',
         @LokalizacjaID = NULL;
     PRINT 'Status: W dostawie';
-    
+
     -- 6. Dostarczona
     IF @CzyDostawaDoDomu = 1
     BEGIN
@@ -80,9 +80,10 @@ BEGIN
     END
     ELSE
     BEGIN
-        -- Przypisz do skrytki
-        EXEC sp_PrzypiszDoSkrytki @PrzesylkaID = @PrzesylkaID;
-        
+        -- Zamiast sp_PrzypiszDoSkrytki używamy wersji z kodem
+        DECLARE @KodOdbioru VARCHAR(6);
+        EXEC sp_PrzypiszDoSkrytkiZKodem @PrzesylkaID = @PrzesylkaID;
+
         WAITFOR DELAY '00:00:01';
         EXEC sp_AktualizujStatusPrzesylki 
             @PrzesylkaID = @PrzesylkaID,
@@ -91,9 +92,9 @@ BEGIN
             @LokalizacjaID = @DroppointID;
         PRINT 'Status: W paczkomacie';
     END
-    
+
     PRINT 'Symulacja zakończona!';
-    
+
     SELECT * 
     FROM HistoriaStatusowPrzesylek 
     WHERE PrzesylkaID = @PrzesylkaID

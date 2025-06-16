@@ -11,13 +11,11 @@ AS
 BEGIN
     SET NOCOUNT ON;
     BEGIN TRY
-        -- Walidacja priorytetu
         IF @Priorytet NOT IN ('Niski', 'Sredni', 'Wysoki', 'Krytyczny')
         BEGIN
             SET @Priorytet = 'Sredni';
         END
         
-        -- Walidacja typu obiektu
         IF @TypObiektu NOT IN ('Sortownia', 'DropPoint', 'Skrytka')
         BEGIN
             RAISERROR('Nieprawidłowy typ obiektu', 16, 1);
@@ -29,7 +27,6 @@ BEGIN
         
         DECLARE @AwariaID INT = SCOPE_IDENTITY();
         
-        -- Jeśli to krytyczna awaria droppointa, dezaktywuj go
         IF @Priorytet = 'Krytyczny' AND @TypObiektu = 'DropPoint'
         BEGIN
             UPDATE Droppointy SET CzyAktywny = 0 WHERE DroppointID = @ObiektID;

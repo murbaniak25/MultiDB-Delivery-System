@@ -1,7 +1,6 @@
 USE DeliveryDB;
 GO
 
-
 CREATE OR ALTER PROCEDURE sp_NadajPrzesylkeV2
     @NadawcaID INT,
     @OdbiorcaEmail VARCHAR(100),
@@ -14,7 +13,7 @@ CREATE OR ALTER PROCEDURE sp_NadajPrzesylkeV2
     @OdbiorcaWojewodztwo VARCHAR(50),
     @Gabaryt CHAR(1),
     @PaczkomatDocelowy VARCHAR(10) = NULL, 
-    @DostawaDoDomu BIT = 0 -- 0 = paczkomat (wymaga podania paczkomatu), 1 = dostawa do domu
+    @DostawaDoDomu BIT = 0 -- 0 = paczkomat, 1 = dostawa do domu
 AS
 BEGIN
     SET NOCOUNT ON;
@@ -67,31 +66,71 @@ BEGIN
         FROM WojewodztwaSortowni
         WHERE Wojewodztwo = @NadawcaWojewodztwo;
         
-        
-        DECLARE @SortowniaDocelowaID INT;
-        SELECT TOP 1 @SortowniaDocelowaID = SortowniaID
-        FROM WojewodztwaSortowni
-        WHERE Wojewodztwo = @OdbiorcaWojewodztwo;
-        
+        IF @SortowniaNadaniaID IS NULL
+            SET @SortowniaNadaniaID = 1;
         
         DECLARE @DroppointID INT = NULL;
-        
+        DECLARE @SortowniaDocelowaID INT;
+        DECLARE @WojewodztwoDocelowe VARCHAR(50);
+
         IF @DostawaDoDomu = 0 
         BEGIN
-            -- Szukamy podanego paczkomatu
             SELECT @DroppointID = d.DroppointID
             FROM Droppointy d
             INNER JOIN ObiektInfrastruktury o ON d.DroppointID = o.ObiektID
             WHERE o.Nazwa LIKE '%' + @PaczkomatDocelowy + '%'
-                AND d.CzyAktywny = 1;
-                
+            AND d.CzyAktywny = 1
+            AND NOT EXISTS (
+                    SELECT 1 FROM AwarieInfrastruktury ai
+                    WHERE ai.TypObiektu = 'DropPoint'
+                    AND ai.ObiektID = d.DroppointID
+                    AND ai.Status IN ('Otwarta', 'W trakcie')
+            );
+
             IF @DroppointID IS NULL
             BEGIN
-                RAISERROR('Nie znaleziono aktywnego paczkomatu o nazwie: %s', 16, 1, @PaczkomatDocelowy);
+                RAISERROR('Nie znaleziono sprawnego, aktywnego paczkomatu o nazwie: %s', 16, 1, @PaczkomatDocelowy);
                 RETURN;
             END
+
+            IF NOT EXISTS (
+                SELECT 1
+                FROM SkrytkiPaczkomatow s
+                WHERE s.DroppointID = @DroppointID
+                AND NOT EXISTS (
+                        SELECT 1 FROM AwarieInfrastruktury ai
+                        WHERE ai.TypObiektu = 'Skrytka'
+                        AND ai.ObiektID = s.SkrytkaID
+                        AND ai.Status IN ('Otwarta', 'W trakcie')
+                )
+            )
+            BEGIN
+                RAISERROR('Wybrany paczkomat jest pełny lub wszystkie skrytki są niesprawne.', 16, 1);
+                RETURN;
+            END
+
+            SELECT @SortowniaDocelowaID = d.SortowniaID
+            FROM Droppointy d
+            WHERE d.DroppointID = @DroppointID;
+
+            SELECT @WojewodztwoDocelowe = a.Wojewodztwo
+            FROM Droppointy d
+            INNER JOIN ObiektInfrastruktury o ON d.DroppointID = o.ObiektID
+            INNER JOIN Adresy a ON o.AdresID = a.AdresID
+            WHERE d.DroppointID = @DroppointID;
         END
 
+        ELSE 
+        BEGIN
+            SET @WojewodztwoDocelowe = @OdbiorcaWojewodztwo;
+            
+            SELECT TOP 1 @SortowniaDocelowaID = SortowniaID
+            FROM WojewodztwaSortowni
+            WHERE Wojewodztwo = @WojewodztwoDocelowe;
+            
+            IF @SortowniaDocelowaID IS NULL
+                SET @SortowniaDocelowaID = 1;
+        END
         
         DECLARE @KurierID INT;
         
@@ -118,7 +157,7 @@ BEGIN
         
         DECLARE @CzasTransportu INT = 0;
         DECLARE @Trasa VARCHAR(20) = '';
-        
+
         IF @SortowniaNadaniaID != @SortowniaDocelowaID
         BEGIN
             DECLARE @KodSortowniNadania VARCHAR(3), @KodSortowniDocelowa VARCHAR(3);
@@ -168,9 +207,9 @@ BEGIN
                 SET @CzasTransportu = 18;
             END
         END
-        
+
         SET @CzasTransportu = @CzasTransportu + 4;
-        
+
         IF @DostawaDoDomu = 1
         BEGIN
             SET @CzasTransportu = @CzasTransportu + 4;
@@ -179,6 +218,22 @@ BEGIN
         BEGIN
             SET @CzasTransportu = @CzasTransportu + 2;
         END
+
+        DECLARE @PrzewidywanaDataDostawy DATETIME = DATEADD(HOUR, @CzasTransportu, GETDATE());
+        DECLARE @GodzinaPrzewidywana INT = DATEPART(HOUR, @PrzewidywanaDataDostawy);
+
+        IF @GodzinaPrzewidywana < 8
+        BEGIN
+            SET @PrzewidywanaDataDostawy = DATEADD(HOUR, 8 - @GodzinaPrzewidywana, @PrzewidywanaDataDostawy);
+            SET @PrzewidywanaDataDostawy = DATEADD(MINUTE, -DATEPART(MINUTE, @PrzewidywanaDataDostawy), @PrzewidywanaDataDostawy);
+            SET @PrzewidywanaDataDostawy = DATEADD(SECOND, -DATEPART(SECOND, @PrzewidywanaDataDostawy), @PrzewidywanaDataDostawy);
+        END
+        ELSE IF @GodzinaPrzewidywana >= 20
+        BEGIN
+            SET @PrzewidywanaDataDostawy = DATEADD(DAY, 1, CAST(@PrzewidywanaDataDostawy AS DATE));
+            SET @PrzewidywanaDataDostawy = DATEADD(HOUR, 8, @PrzewidywanaDataDostawy);
+        END
+
         
         INSERT INTO Przesylki (NadawcaID, DroppointID, SortowniaID, KurierID, AdresNadaniaID, Gabaryt)
         VALUES (@NadawcaID, @DroppointID, @SortowniaNadaniaID, @KurierID, @AdresNadaniaID, @Gabaryt);
@@ -201,8 +256,8 @@ BEGIN
         DECLARE @OpisStatusu VARCHAR(500);
         SET @OpisStatusu = 'Przesyłka została nadana i przekazana kurierowi. ' +
             CASE 
-                WHEN @DostawaDoDomu = 1 THEN 'Dostawa do adresu domowego.'
-                ELSE 'Dostawa do paczkomatu ' + @PaczkomatDocelowy + '.'
+                WHEN @DostawaDoDomu = 1 THEN 'Dostawa do adresu domowego w województwie ' + @WojewodztwoDocelowe + '.'
+                ELSE 'Dostawa do paczkomatu ' + @PaczkomatDocelowy + ' (sortownia: ' + CAST(@SortowniaDocelowaID AS VARCHAR) + ').'
             END;
             
         INSERT INTO HistoriaStatusowPrzesylek (PrzesylkaID, Status, Opis, LokalizacjaID)
@@ -210,18 +265,52 @@ BEGIN
         
         EXEC sp_WyslijNotyfikacjeEmail @PrzesylkaID, 'NADANIE';
         
+        IF @DostawaDoDomu = 0
+        BEGIN
+            EXEC sp_PrzypiszDoSkrytkiZKodem @PrzesylkaID;
+        END
+
         COMMIT TRANSACTION;
         
         SELECT 
             @PrzesylkaID AS NowaPrzesylkaID,
-            @CzasTransportu AS PrzewidywanyCzasDostawyGodzin,
-            DATEADD(HOUR, @CzasTransportu, GETDATE()) AS PrzewidywanaDataDostawy,
+            @PrzewidywanaDataDostawy AS PrzewidywanaDataDostawy,
             @Trasa AS TrasaPrzesylki,
             CASE 
                 WHEN @DostawaDoDomu = 1 THEN 'Dostawa do domu'
                 ELSE 'Dostawa do paczkomatu: ' + @PaczkomatDocelowy
-            END AS TypDostawy;
-        
+            END AS TypDostawy,
+            @SortowniaNadaniaID AS SortowniaNadania,
+            @SortowniaDocelowaID AS SortowniaDocelowa,
+            CASE 
+                WHEN @DostawaDoDomu = 1 THEN @WojewodztwoDocelowe
+                ELSE (SELECT a.Wojewodztwo FROM ObiektInfrastruktury o 
+                    INNER JOIN Adresy a ON o.AdresID = a.AdresID 
+                    WHERE o.ObiektID = @DroppointID)
+            END AS WojewodztwoDocelowe,
+            CASE 
+                WHEN @DostawaDoDomu = 0 
+                    THEN (SELECT TOP 1 o.Nazwa 
+                        FROM ObiektInfrastruktury o 
+                        WHERE o.ObiektID = @DroppointID)
+                ELSE NULL
+            END AS PaczkomatDocelowy,
+            CASE 
+                WHEN @DostawaDoDomu = 0 
+                    THEN (SELECT TOP 1 SkrytkaID 
+                        FROM Przesylki 
+                        WHERE PrzesylkaID = @PrzesylkaID)
+                ELSE NULL
+            END AS SkrytkaID,
+            CASE 
+                WHEN @DostawaDoDomu = 0 
+                    THEN (SELECT TOP 1 KodOdbioru 
+                        FROM KodyOdbioru 
+                        WHERE PrzesylkaID = @PrzesylkaID 
+                            AND DataWygasniecia > GETDATE() 
+                        ORDER BY DataWygasniecia DESC)
+                ELSE NULL
+            END AS KodOdbioru;        
     END TRY
     BEGIN CATCH
         IF @@TRANCOUNT > 0 ROLLBACK TRANSACTION;

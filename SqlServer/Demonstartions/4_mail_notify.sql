@@ -15,13 +15,11 @@ EXEC sp_NadajPrzesylkeV2
     @OdbiorcaWojewodztwo = 'Mazowieckie',
     @Gabaryt = 'A',
     @DostawaDoDomu = 0,
-    @PaczkomatDocelowy = 'WAW01';
+    @PaczkomatDocelowy = 'KRK01';
 
 SELECT TOP 1 @TestPrzesylkaID = PrzesylkaID 
 FROM Przesylki 
 ORDER BY PrzesylkaID DESC;
-
-EXEC sp_PrzypiszDoSkrytkiZKodem @PrzesylkaID = @TestPrzesylkaID;
 
 SELECT 
     ko.KodOdbioru,
@@ -34,10 +32,11 @@ INNER JOIN OdbiorcyPrzesylki op ON p.PrzesylkaID = op.PrzesylkaID
 INNER JOIN Klienci k ON op.OdbiorcaID = k.KlientID
 WHERE ko.PrzesylkaID = @TestPrzesylkaID;
 
-SELECT TOP 1
+SELECT TOP 3
     AdresEmail,
     Temat,
     TrescTekst
 FROM KolejkaNotyfikacji
 WHERE AdresEmail = 'xd123@riseup.net'
 ORDER BY DataUtworzenia DESC;
+

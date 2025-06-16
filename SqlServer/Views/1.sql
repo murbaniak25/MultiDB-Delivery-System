@@ -1,3 +1,6 @@
+USE DeliveryDB
+GO
+
 CREATE OR ALTER VIEW vw_SzczegolyPrzesylki AS
 SELECT 
     p.PrzesylkaID,

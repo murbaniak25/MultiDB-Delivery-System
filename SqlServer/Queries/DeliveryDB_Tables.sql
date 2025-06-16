@@ -375,6 +375,10 @@ CREATE TABLE HistoriaStatusowPrzesylek (
 
 ALTER TABLE Przesylki ALTER COLUMN DroppointID INT NULL;
 
+ALTER TABLE OperacjeKurierskie
+ALTER COLUMN Status VARCHAR(50) NOT NULL;
+
+
 CREATE TABLE KodyOdbioru (
     KodID INT IDENTITY(1,1) PRIMARY KEY,
     PrzesylkaID INT NOT NULL,
