@@ -372,3 +372,5 @@ CREATE TABLE HistoriaStatusowPrzesylek (
     DataZmiany DATETIME2 DEFAULT GETDATE(),
     FOREIGN KEY (PrzesylkaID) REFERENCES Przesylki(PrzesylkaID)
 );
+
+ALTER TABLE Przesylki ALTER COLUMN DroppointID INT NULL;

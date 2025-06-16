@@ -13,7 +13,8 @@ CREATE OR ALTER PROCEDURE sp_NadajPrzesylkeV2
     @OdbiorcaMiasto VARCHAR(50),
     @OdbiorcaWojewodztwo VARCHAR(50),
     @Gabaryt CHAR(1),
-    @PaczkomatDocelowy VARCHAR(10) = NULL
+    @PaczkomatDocelowy VARCHAR(10) = NULL, 
+    @DostawaDoDomu BIT = 0 -- 0 = paczkomat (wymaga podania paczkomatu), 1 = dostawa do domu
 AS
 BEGIN
     SET NOCOUNT ON;
@@ -23,6 +24,18 @@ BEGIN
         IF NOT EXISTS (SELECT 1 FROM Gabaryty WHERE Gabaryt = @Gabaryt)
         BEGIN
             RAISERROR('Nieprawidłowy gabaryt przesyłki', 16, 1);
+            RETURN;
+        END
+        
+        IF @DostawaDoDomu = 0 AND @PaczkomatDocelowy IS NULL
+        BEGIN
+            RAISERROR('Dla dostawy do paczkomatu wymagane jest podanie nazwy paczkomatu docelowego', 16, 1);
+            RETURN;
+        END
+        
+        IF @DostawaDoDomu = 1 AND @PaczkomatDocelowy IS NOT NULL
+        BEGIN
+            RAISERROR('Dla dostawy do domu nie należy podawać paczkomatu', 16, 1);
             RETURN;
         END
         
@@ -49,55 +62,48 @@ BEGIN
         INNER JOIN Adresy a ON k.AdresID = a.AdresID
         WHERE k.KlientID = @NadawcaID;
         
-        -- sortownia nadania (najbliższej nadawcy)
         DECLARE @SortowniaNadaniaID INT;
         SELECT TOP 1 @SortowniaNadaniaID = SortowniaID
         FROM WojewodztwaSortowni
         WHERE Wojewodztwo = @NadawcaWojewodztwo;
         
-        IF @SortowniaNadaniaID IS NULL
-        BEGIN
-            SET @SortowniaNadaniaID = 1;
-        END
         
-        -- sortownia docelowa
         DECLARE @SortowniaDocelowaID INT;
         SELECT TOP 1 @SortowniaDocelowaID = SortowniaID
         FROM WojewodztwaSortowni
         WHERE Wojewodztwo = @OdbiorcaWojewodztwo;
         
-        IF @SortowniaDocelowaID IS NULL
-        BEGIN
-            SET @SortowniaDocelowaID = 1;
-        END
         
         DECLARE @DroppointID INT = NULL;
-        IF @PaczkomatDocelowy IS NOT NULL
+        
+        IF @DostawaDoDomu = 0 
         BEGIN
-            SELECT @DroppointID = DroppointID
+            -- Szukamy podanego paczkomatu
+            SELECT @DroppointID = d.DroppointID
             FROM Droppointy d
             INNER JOIN ObiektInfrastruktury o ON d.DroppointID = o.ObiektID
             WHERE o.Nazwa LIKE '%' + @PaczkomatDocelowy + '%'
-            AND d.CzyAktywny = 1;
+                AND d.CzyAktywny = 1;
+                
             IF @DroppointID IS NULL
             BEGIN
-                RAISERROR('Podany paczkomat docelowy nie istnieje lub jest nieaktywny', 16, 1);
+                RAISERROR('Nie znaleziono aktywnego paczkomatu o nazwie: %s', 16, 1, @PaczkomatDocelowy);
                 RETURN;
             END
         END
 
         
         DECLARE @KurierID INT;
+        
         SELECT TOP 1 @KurierID = KurierID
         FROM Kurierzy
         WHERE SortowniaID = @SortowniaNadaniaID
             AND Wojewodztwo = @NadawcaWojewodztwo
             AND PrzesylkaID IS NULL
-        ORDER BY NEWID();
+        ORDER BY NEWID(); 
         
         IF @KurierID IS NULL
         BEGIN
-            -- Jeśli nie ma wolnego -> najmniej obciążony
             SELECT TOP 1 @KurierID = k.KurierID
             FROM Kurierzy k
             LEFT JOIN (
@@ -111,18 +117,35 @@ BEGIN
         END
         
         DECLARE @CzasTransportu INT = 0;
-        DECLARE @Trasa VARCHAR(20);
+        DECLARE @Trasa VARCHAR(20) = '';
         
         IF @SortowniaNadaniaID != @SortowniaDocelowaID
         BEGIN
             DECLARE @KodSortowniNadania VARCHAR(3), @KodSortowniDocelowa VARCHAR(3);
-            SELECT @KodSortowniNadania = LEFT(o.Nazwa, 3)
-            FROM ObiektInfrastruktury o
-            WHERE o.ObiektID = @SortowniaNadaniaID;
             
-            SELECT @KodSortowniDocelowa = LEFT(o.Nazwa, 3)
-            FROM ObiektInfrastruktury o
-            WHERE o.ObiektID = @SortowniaDocelowaID;
+            SELECT @KodSortowniNadania = 
+                CASE 
+                    WHEN Nazwa LIKE '%Warszawa%' THEN 'WAW'
+                    WHEN Nazwa LIKE '%Kraków%' THEN 'KRK'
+                    WHEN Nazwa LIKE '%Wrocław%' THEN 'WRO'
+                    WHEN Nazwa LIKE '%Gdańsk%' THEN 'GDA'
+                    WHEN Nazwa LIKE '%Łódź%' THEN 'LOD'
+                    ELSE 'WAW'
+                END
+            FROM ObiektInfrastruktury
+            WHERE ObiektID = @SortowniaNadaniaID;
+            
+            SELECT @KodSortowniDocelowa = 
+                CASE 
+                    WHEN Nazwa LIKE '%Warszawa%' THEN 'WAW'
+                    WHEN Nazwa LIKE '%Kraków%' THEN 'KRK'
+                    WHEN Nazwa LIKE '%Wrocław%' THEN 'WRO'
+                    WHEN Nazwa LIKE '%Gdańsk%' THEN 'GDA'
+                    WHEN Nazwa LIKE '%Łódź%' THEN 'LOD'
+                    ELSE 'WAW'
+                END
+            FROM ObiektInfrastruktury
+            WHERE ObiektID = @SortowniaDocelowaID;
             
             SET @Trasa = @KodSortowniNadania + '-' + @KodSortowniDocelowa;
             
@@ -131,16 +154,34 @@ BEGIN
                 SET @Trasa = @KodSortowniDocelowa + '-' + @KodSortowniNadania;
             END
             
-            SELECT @CzasTransportu = CAST(LEFT(CzasPrzejazdu, CHARINDEX('h', CzasPrzejazdu) - 1) AS INT)
+            SELECT @CzasTransportu = 
+                CASE 
+                    WHEN CHARINDEX('h', CzasPrzejazdu) > 0 
+                    THEN CAST(LEFT(CzasPrzejazdu, CHARINDEX('h', CzasPrzejazdu) - 1) AS INT)
+                    ELSE 0
+                END
             FROM CzasyPrzejazdow
             WHERE Trasa = @Trasa;
+            
+            IF @CzasTransportu IS NULL OR @CzasTransportu = 0
+            BEGIN
+                SET @CzasTransportu = 18;
+            END
         END
         
-        SET @CzasTransportu = @CzasTransportu + 4 + 2; -- 4h sortowanie, 2h dostawa
+        SET @CzasTransportu = @CzasTransportu + 4;
+        
+        IF @DostawaDoDomu = 1
+        BEGIN
+            SET @CzasTransportu = @CzasTransportu + 4;
+        END
+        ELSE
+        BEGIN
+            SET @CzasTransportu = @CzasTransportu + 2;
+        END
         
         INSERT INTO Przesylki (NadawcaID, DroppointID, SortowniaID, KurierID, AdresNadaniaID, Gabaryt)
         VALUES (@NadawcaID, @DroppointID, @SortowniaNadaniaID, @KurierID, @AdresNadaniaID, @Gabaryt);
-
         
         DECLARE @PrzesylkaID INT = SCOPE_IDENTITY();
         
@@ -157,8 +198,15 @@ BEGIN
                 DATEADD(HOUR, 2, GETDATE()), 
                 DATEADD(HOUR, @CzasTransportu, GETDATE()));
         
+        DECLARE @OpisStatusu VARCHAR(500);
+        SET @OpisStatusu = 'Przesyłka została nadana i przekazana kurierowi. ' +
+            CASE 
+                WHEN @DostawaDoDomu = 1 THEN 'Dostawa do adresu domowego.'
+                ELSE 'Dostawa do paczkomatu ' + @PaczkomatDocelowy + '.'
+            END;
+            
         INSERT INTO HistoriaStatusowPrzesylek (PrzesylkaID, Status, Opis, LokalizacjaID)
-        VALUES (@PrzesylkaID, 'Nadana', 'Przesyłka została nadana i przekazana kurierowi', @SortowniaNadaniaID);
+        VALUES (@PrzesylkaID, 'Nadana', @OpisStatusu, @SortowniaNadaniaID);
         
         EXEC sp_WyslijNotyfikacjeEmail @PrzesylkaID, 'NADANIE';
         
@@ -168,7 +216,11 @@ BEGIN
             @PrzesylkaID AS NowaPrzesylkaID,
             @CzasTransportu AS PrzewidywanyCzasDostawyGodzin,
             DATEADD(HOUR, @CzasTransportu, GETDATE()) AS PrzewidywanaDataDostawy,
-            @Trasa AS TrasaPrzesylki;
+            @Trasa AS TrasaPrzesylki,
+            CASE 
+                WHEN @DostawaDoDomu = 1 THEN 'Dostawa do domu'
+                ELSE 'Dostawa do paczkomatu: ' + @PaczkomatDocelowy
+            END AS TypDostawy;
         
     END TRY
     BEGIN CATCH
