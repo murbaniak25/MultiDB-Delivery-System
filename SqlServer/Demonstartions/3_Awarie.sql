@@ -39,7 +39,7 @@ EXEC sp_NadajPrzesylkeV2
     @DostawaDoDomu = 0;
 
 EXEC sp_AktualizujStatusAwarii
-    @AwariaID = 5,
+    @AwariaID = 1,
     @NowyStatus = 'Naprawiona';
 
 

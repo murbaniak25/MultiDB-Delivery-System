@@ -1,0 +1,22 @@
+SELECT * FROM V_REKOMENDACJA_KURIERA WHERE ROWNUM <= 5;
+
+SELECT F_REKOMENDUJ_KURIERA(1, 'Mazowieckie', 'B') AS Kurier_Sortownia_1 FROM DUAL;
+SELECT F_REKOMENDUJ_KURIERA(2, 'Małopolskie', 'A') AS Kurier_Sortownia_2 FROM DUAL;
+SELECT F_REKOMENDUJ_KURIERA(3, 'Dolnośląskie', 'C') AS Kurier_Sortownia_3 FROM DUAL;
+
+SELECT * FROM V_RANKING_WYDAJNOSCI_KURIEROW WHERE ROWNUM <= 5;
+
+BEGIN
+    P_ANALIZA_PACZKOMATOW(p_wojewodztwo => 'Mazowieckie', p_prog_wykorzystania => 70);
+END;
+/
+
+BEGIN
+    P_DASHBOARD_MENEDZERSKI();
+END;
+/
+
+BEGIN
+    P_RAPORT_FINANSOWY();
+END;
+/
