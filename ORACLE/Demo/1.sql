@@ -1,35 +1,50 @@
--- Kompleksowa analiza wydajności kuriera
-
-DECLARE
-    v_kurier_id NUMBER := 1;
-    v_okres VARCHAR2(7) := TO_CHAR(SYSDATE, 'YYYY-MM');
-BEGIN
-
-    --Analiza wydajności
-    DBMS_OUTPUT.PUT_LINE('1. Analiza wydajności kuriera:');
-    P_ANALIZA_WYDAJNOSCI_KURIERA(v_kurier_id, v_okres);
-    
-    DBMS_OUTPUT.PUT_LINE('');
-    DBMS_OUTPUT.PUT_LINE('2. Pozycja w rankingu:');
-END;
-/
-
--- Sprawdzenie pozycji w rankingu
-SELECT 
-    KURIER_ID,
-    OKRES_ROZLICZENIOWY,
-    LICZBA_DOSTAW,
-    SREDNI_CZAS_DOSTAWY_MIN,
-    WSKAZNIK_WYDAJNOSCI,
-    RANKING,
-    KATEGORIA
+SELECT
+    KurierID,
+    Imie,
+    Nazwisko,
+    Wojewodztwo,
+    SortowniaNazwa,
+    LiczbaUdanychDostaw,
+    SredniCzasDostawyMinuty,
+    Ranking,
+    DataAktualizacji
 FROM V_RANKING_KURIEROW
-WHERE KURIER_ID = 1
-ORDER BY OKRES_ROZLICZENIOWY DESC;
+WHERE Ranking <= 10;
 
--- Automatyczna ocena roczna
-EXEC P_OCENA_PRACOWNIKA('KURIER', 1, TO_CHAR(SYSDATE, 'YYYY'), 100);
+SELECT
+    SortowniaID,
+    SortowniaNazwa,
+    Miasto,
+    Wojewodztwo,
+    LiczbaPracownikow,
+    LiczbaKurierow,
+    LiczbaPrzetworzonych,
+    SredniCzasPrzetwarzaniaMinuty
+FROM V_DASHBOARD_SORTOWNIE
+WHERE Wojewodztwo = 'Małopolskie'
+ORDER BY LiczbaPrzetworzonych DESC;
 
---Sprawdzenie oceny
-SELECT * FROM V_OCENY_PRACOWNIKOW
-WHERE TYP_PRACOWNIKA = 'KURIER' AND PRACOWNIK_ID = 1;
+SELECT
+    Gabaryt,
+    WojewodztwoNadania,
+    WojewodztwoOdbioru,
+    SumaPrzesylek,
+    SredniCzasTransportu,
+    DataAktualizacji
+FROM V_PRZESYLKI_GABARYT_REGION
+WHERE Gabaryt = 'B'
+ORDER BY SumaPrzesylek DESC;
+
+SELECT
+    DataZgloszenia,
+    KodBledu,
+    Kategoria,
+    LiczbaZgloszen,
+    LiczbaAwarii,
+    LiczbaNaprawionych,
+    SredniCzasNaprawy
+FROM V_AGREGAT_BLEDY_AWARIE_DZIEN
+WHERE DataZgloszenia >= TRUNC(SYSDATE) - 30
+ORDER BY DataZgloszenia DESC, LiczbaAwarii DESC;
+
+
