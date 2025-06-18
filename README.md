@@ -175,7 +175,7 @@ SELECT * FROM Przesylki WHERE PrzesylkaID = 2;
 SELECT * FROM KodyOdbioru WHERE PrzesylkaID = 2;
 
 ---
-
+```
 📄 Licencja  
 System wewnętrzny - wszystkie prawa zastrzeżone
 
