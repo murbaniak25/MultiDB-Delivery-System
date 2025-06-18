@@ -177,8 +177,8 @@ SELECT * FROM KodyOdbioru WHERE PrzesylkaID = 2;
 ---
 ```
 ### Licencja  
-## System wewnętrzny - wszystkie prawa zastrzeżone
+System wewnętrzny - wszystkie prawa zastrzeżone
 
 ### Zespół  
-## Architekt systemu: Michał Urbaniak  
-## Developer SQL: Jędrzej Małaczyński
+Architekt systemu: Michał Urbaniak  
+Developer SQL: Jędrzej Małaczyński
