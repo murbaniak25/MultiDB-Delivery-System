@@ -240,9 +240,10 @@ BEGIN
                 SET @CzasTransportu = 18;
             END
         END
-
+        -- Dodanie czasu przetwarzania w sortowni (4h)
         SET @CzasTransportu = @CzasTransportu + 4;
 
+        -- Dodanie czasu doręczenia: 4h dla dostawy do domu, 2h dla paczkomatu
         IF @DostawaDoDomu = 1
         BEGIN
             SET @CzasTransportu = @CzasTransportu + 4;
